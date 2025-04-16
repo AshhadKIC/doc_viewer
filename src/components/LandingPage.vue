@@ -5,7 +5,7 @@
         <div >
             <p v-for="page in pageList" :key="page.fileName">
 
-                <router-link :to="`/files/${page.fileName}`">{{ page.fileType }} - {{ page.fileName }}</router-link>
+                <router-link :to="`/files/${page.fileName}`"><span style="font-weight: bold;">{{ page.fileType }}</span> - {{ page.fileName }}</router-link>
             </p>
         </div>
     </div>
