@@ -13,11 +13,11 @@
         <p>File Name: {{ fileName }}</p> -->
       </div>
         
-      <div v-if="isLoading" class="loading">
+      <div v-if="isLoading" class="loading no-print">
         <p>Loading....</p>
       </div>
       
-      <div v-if="isImage" class="d-flex">
+      <div v-if="showActions" class="d-flex no-print">
         <div class="button-container d-flex ml-auto p-4" style="margin-left: auto;">
           <div class="mr-2" style="margin-right: 1rem;">
             <button class="btn btn-primary btn-sm" @click="printFile" ><i class="fa-solid fa-print"></i></button> 
@@ -68,7 +68,7 @@ export default {
         filesName: null,
         isLoading: true,
         fileError: false,
-        isImage: false,
+        showActions: false,
         imgExt: ['jpg', 'png', 'jpeg', 'webp', 'gif', 'bmp', 'svg', 'ico']
     };
   },
@@ -106,13 +106,40 @@ export default {
         return filename.substring(idx + 1)
     },
     printFile() {
-      var prtContent = document.getElementById("previewSection");
-      var WinPrint = window.open('', '', 'left=0,top=0,width=800,height=900,toolbar=0,scrollbars=0,status=0');
-      WinPrint.document.write(prtContent.innerHTML);
-      WinPrint.document.close();
-      WinPrint.focus();
-      WinPrint.print();
-      WinPrint.close();
+      // if(this.getFileType(this.fileName) == 'xlsx') {
+        window.print();
+        return true;
+      // }
+      
+      // var prtContent = document.getElementById("previewSection");
+      // var WinPrint = window.open('', '_blank', 'left=0,top=0,width=800,height=2400');
+      // WinPrint.document.write(prtContent.outerHTML);
+      // WinPrint.document.write(`
+      //   <style>
+      //     body {
+      //       margin: 0;
+      //       padding: 0;
+      //       height: auto !important;
+      //       overflow: visible !important;
+      //       margin: 0;
+      //       padding: 0;
+      //     }
+      //     img {
+      //       max-width: 100%
+      //     }
+      //   </style>
+      // `);
+      
+      // WinPrint.document.close();
+
+      // Wait until content has fully loaded
+      // WinPrint.onload = () => {
+      //   setTimeout(() => {
+      //     WinPrint.focus();
+      //     WinPrint.print();
+      //     WinPrint.close();
+      //   }, 800); // Adjust if still cutting off
+      // };
     },
     async downloadFile() {
       
@@ -165,10 +192,12 @@ export default {
         // Word Doc - Working
         // this.fileUrl = "http://localhost:3000/files/sample-files.com-basic-text.docx";
         // this.fileName = "sample-files.com-basic-text.docx";
+        // this.fileUrl = "http://localhost:3000/files/KIC_FORMS.docx";
+        // this.fileName = "KIC_FORMS.docx";
         
         // Excel Doc - Working, but not showing contents
-        // this.fileUrl = "http://localhost:3000/files/file_example_XLS_10.xls";
-        // this.fileName = "file_example_XLS_10.xls";
+        // this.fileUrl = "http://localhost:3000/files/file_example_XLS_10.xlsx";
+        // this.fileName = "file_example_XLS_10.xlsx";
         
         // Powerpoint Doc - Working, but not showing contents
         // this.fileUrl = "http://localhost:3000/files/file_example_PPT_500kB.ppt";
@@ -209,8 +238,8 @@ export default {
           const filesName = fileName;
 
           const fileType = this.getFileType(filesName);
-          if(this.imgExt.includes(fileType)) {
-            this.isImage = true;
+          if(fileType != "pdf") {
+            this.showActions = true;
           }
           
           this.uploadFile = new File([data], filesName);
@@ -237,6 +266,16 @@ export default {
 .pdf-iframe {
   height: 100vh;
   width: 100%;
+}
+
+@media print
+{    
+    .no-print, .no-print *
+    {
+        display: none !important;
+        width: 0;
+        height: 0;
+    }
 }
 
 </style>
