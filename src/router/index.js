@@ -10,7 +10,7 @@ const routes = [
     component: LandingPage
   },
   {
-    path: '/files/:name',
+    path: '/files/:name/:doc_type?',
     name: 'UploadShow',
     component: UploadShow
   },
@@ -23,6 +23,7 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
+  mode: 'hash',
   routes
 });
 

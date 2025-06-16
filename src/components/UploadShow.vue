@@ -63,6 +63,7 @@ export default {
     return {
         uploadFile: null,
         fileName: null,
+        doc_type: 'CustomerDocs',
         fileUrl: null,
         // uploadRef: null
         filesName: null,
@@ -78,12 +79,14 @@ export default {
   created() {
     // Accessing the route params
     let fileId = this.$route.params.name;
-    
+    if(this.$route.params.doc_type) {
+      this.doc_type = atob(this.$route.params.doc_type);
+    }
     // check if route parm is number
     if(isNaN(fileId)) {
       // Decode base64
       try {
-        this.filesName = atob(fileId);
+        this.filesName = fileId;
 
       } catch (error) {
         console.log(error);
@@ -144,8 +147,8 @@ export default {
     async downloadFile() {
       
       try {
-        const response = await axios.get('https://kic-connect-uat.kic.com.kw/api/v1/download', {
-          params: { id: this.fileName, docType: 'CustomerDocs' },
+        const response = await axios.get('https://kic-connect.kic.com.kw/api/v1/download', {
+          params: { id: this.fileName, docType: this.doc_type},
         });
 
         if (response.data.success) {
@@ -227,8 +230,13 @@ export default {
           // this.uploadFile = new File([data], filename);
           
           
+          // console.log(this.fileName);
+          
+          
           // Load preview by api response
-          const docUrl = "https://kic-connect-uat.kic.com.kw/api/v1/download?id="+this.fileName+"&docType=CustomerDocs";
+          const docUrl = "https://kic-connect.kic.com.kw/api/v1/download?id="+this.fileName+"&docType="+this.doc_type;
+          // console.log(docUrl);
+          
           const response = await axios.get(docUrl);
           const { fileBytes, fileName, contentType } = response.data;
           const byteArray = Uint8Array.from(atob(fileBytes), char => char.charCodeAt(0));
