@@ -243,8 +243,12 @@ export default {
           const blob = new Blob([byteArray], { type: contentType });
           
           const data = blob;
-          const filesName = fileName;
-
+          let filesName = fileName;
+          
+          // Lowercase file extension
+          const [filename, extension] = filesName.split('.');
+          filesName = filename + '.' + extension.toLowerCase();
+          
           const fileType = this.getFileType(filesName);
           if(fileType != "pdf") {
             this.showActions = true;
