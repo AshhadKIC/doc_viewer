@@ -70,17 +70,35 @@ export default {
         isLoading: true,
         fileError: false,
         showActions: false,
-        imgExt: ['jpg', 'png', 'jpeg', 'webp', 'gif', 'bmp', 'svg', 'ico']
+        imgExt: ['jpg', 'png', 'jpeg', 'webp', 'gif', 'bmp', 'svg', 'ico'],
+        auth: null,
     };
   },
   mounted() {
-    this.pageLoad();
+    
+
+    window.addEventListener("message", (event) => {
+      console.log("event-listener-message", event);
+      
+      
+      // if (event.origin !== "http://localhost:8081") return;
+      // skip current domain  
+      if (event.origin == window.location.origin) return;
+
+      const { token } = event.data;
+      console.log("parent", event.origin);
+      console.log("token from parent", token);
+      this.auth = token;
+      // Use the token securely
+      this.pageLoad();
+
+    });
   },
   created() {
     // Accessing the route params
     let fileId = this.$route.params.name;
     if(this.$route.params.doc_type) {
-      this.doc_type = atob(this.$route.params.doc_type);
+      this.doc_type = this.$route.params.doc_type;
     }
     // check if route parm is number
     if(isNaN(fileId)) {
@@ -147,10 +165,7 @@ export default {
     async downloadFile() {
       
       try {
-        const response = await axios.get('https://kic-connect.kic.com.kw/api/v1/download', {
-          params: { id: this.fileName, docType: this.doc_type},
-        });
-
+        const response = await axios.get(`https://kic-connect.kic.com.kw/api/v1/download/${this.fileName}/${this.doc_type}`);
         if (response.data.success) {
           const { fileBytes, fileName, contentType } = response.data;
           const byteArray = Uint8Array.from(atob(fileBytes), char => char.charCodeAt(0));
@@ -231,18 +246,38 @@ export default {
           
           
           // console.log(this.fileName);
+          const docUrl = `https://kic-connect-dev.kic.com.kw/api/v1/download/${this.fileName}/${this.doc_type}`
+          // const docUrl = "https://kic-connect.kic.com.kw/api/v1/download?id="+this.fileName+"&docType="+this.doc_type;
           
+          const response = await axios.get(docUrl, {
+            responseType: 'blob',
+            headers: {
+              Authorization: `Bearer ${this.auth}`
+            }
+          });
+ 
+          // Create a blob directly from response
+          const blob = response.data;
+          // const contentDisposition = response.headers['content-disposition'];
+          const contentDisposition = 'attachment; filename="251-1-page_1.png"';
+          const fileName = contentDisposition  ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')  : 'file';
           
+          this.uploadFile = new File([blob], fileName);
+                    
           // Load preview by api response
-          const docUrl = "https://kic-connect.kic.com.kw/api/v1/download?id="+this.fileName+"&docType="+this.doc_type;
-          // console.log(docUrl);
+          // console.log( `authorization ${this.auth}`);
           
-          const response = await axios.get(docUrl);
-          const { fileBytes, fileName, contentType } = response.data;
-          const byteArray = Uint8Array.from(atob(fileBytes), char => char.charCodeAt(0));
-          const blob = new Blob([byteArray], { type: contentType });
+          // const response = await axios.get(docUrl, {
+          //   headers: {
+          //     Authorization: `Bearer ${this.auth}`
+          //   }
+          // });
           
-          const data = blob;
+          // const { fileBytes, fileName, contentType } = response.data;
+          // const byteArray = Uint8Array.from(atob(fileBytes), char => char.charCodeAt(0));
+          // const blob = new Blob([byteArray], { type: contentType });
+          
+          // const data = blob;
           let filesName = fileName;
           
           // Lowercase file extension
@@ -254,7 +289,7 @@ export default {
             this.showActions = true;
           }
           
-          this.uploadFile = new File([data], filesName);
+          // this.uploadFile = new File([data], filesName);
           this.isLoading = false;
         } catch (error) {
           this.isLoading = false;
