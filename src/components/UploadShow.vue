@@ -62,16 +62,19 @@ export default {
 
     // Start a timer to see if auth was sent
     setTimeout(() => {
+      // console.log('TIMEOUT');
+      // this.pageLoad();
+      
       // If auth was not sent show unauthorized without waiting
       if(!this.auth) {
         console.log("auth was not sent");
         this.isLoading = false;
         this.showUnauthorized = true;
       }
-      
     }, 2000);
     
 
+    // Listen for the authentication token that will be sent from app trying to use the viewer
     window.addEventListener("message", (event) => {
       // console.log("event-listener-message", event);
 
@@ -140,7 +143,7 @@ export default {
  
           
           // const response = await axios.get(`https://kic-connect.kic.com.kw/api/v1/download/${this.fileName}/${this.doc_type}`);
-          if (response.data.success) {
+          if (response.data) {
             // const { fileBytes, fileName, contentType } = response.data;
             // Create a blob directly from response
             const blob = response.data;
