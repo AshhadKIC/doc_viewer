@@ -128,11 +128,27 @@ export default {
     async downloadFile() {
       
       try {
-        const response = await axios.get(`https://kic-connect.kic.com.kw/api/v1/download/${this.fileName}/${this.doc_type}`);
-        if (response.data.success) {
-          const { fileBytes, fileName, contentType } = response.data;
-          const byteArray = Uint8Array.from(atob(fileBytes), char => char.charCodeAt(0));
-          const blob = new Blob([byteArray], { type: contentType });
+        // Load preview by URL
+          const docUrl = `${process.env.VUE_APP_API_BASE_URL}/download?id=${this.fileName}&docType=${this.doc_type}`;
+          
+          const response = await axios.get(docUrl, {
+            responseType: 'blob',
+            headers: {
+              Authorization: `Bearer ${this.auth}`
+            }
+          });
+ 
+          
+          // const response = await axios.get(`https://kic-connect.kic.com.kw/api/v1/download/${this.fileName}/${this.doc_type}`);
+          if (response.data.success) {
+            // const { fileBytes, fileName, contentType } = response.data;
+            // Create a blob directly from response
+            const blob = response.data;
+            const fileName = response.headers['content-filename'];
+
+            
+          // const byteArray = Uint8Array.from(atob(fileBytes), char => char.charCodeAt(0));
+          // const blob = new Blob([byteArray], { type: contentType });
           const url = URL.createObjectURL(blob);
 
           // Trigger Download
@@ -161,7 +177,7 @@ export default {
           // this.auth = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJjaW10ZXN0dXNlckBraWMuY29tLmt3IiwidW5pcXVlX25hbWUiOiJjaW10ZXN0dXNlciIsImVtYWlsIjoiY2ltdGVzdHVzZXJAa2ljLmNvbS5rdyIsIm5iZiI6MTc1NDM5MDg5NSwiZXhwIjoxNzU0Mzk0NDk1LCJpYXQiOjE3NTQzOTA4OTV9.MCYRybJV_vl8kKmpTOZeiji83Ls0sG0geBr9bzEc-ao';
           
           // Load preview by URL
-          const docUrl = `https://kic-connect-dev.kic.com.kw/api/v1/download?id=${this.fileName}&docType=${this.doc_type}`
+          const docUrl = `${process.env.VUE_APP_API_BASE_URL}/download?id=${this.fileName}&docType=${this.doc_type}`;
           
           const response = await axios.get(docUrl, {
             responseType: 'blob',
