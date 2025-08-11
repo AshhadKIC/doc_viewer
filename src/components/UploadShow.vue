@@ -71,7 +71,7 @@ export default {
         this.isLoading = false;
         this.showUnauthorized = true;
       }
-    }, 2000);
+    }, 3000);
     
 
     // Listen for the authentication token that will be sent from app trying to use the viewer
@@ -96,7 +96,11 @@ export default {
     // Accessing the route params
     let fileId = this.$route.params.name;
     if(this.$route.params.doc_type) {
-      this.doc_type = this.$route.params.doc_type;
+      if(isNaN(this.$route.params.doc_type)){
+        this.doc_type = atob(this.$route.params.doc_type)
+      } else {
+        this.doc_type = this.$route.params.doc_type;
+      }
     }
     // check if route parm is number
     if(isNaN(fileId)) {
@@ -177,7 +181,7 @@ export default {
         this.fileName = this.filesName;
         try {
 
-          // this.auth = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJjaW10ZXN0dXNlckBraWMuY29tLmt3IiwidW5pcXVlX25hbWUiOiJjaW10ZXN0dXNlciIsImVtYWlsIjoiY2ltdGVzdHVzZXJAa2ljLmNvbS5rdyIsIm5iZiI6MTc1NDM5MDg5NSwiZXhwIjoxNzU0Mzk0NDk1LCJpYXQiOjE3NTQzOTA4OTV9.MCYRybJV_vl8kKmpTOZeiji83Ls0sG0geBr9bzEc-ao';
+          // this.auth = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJjaW10ZXN0dXNlckBraWMuY29tLmt3IiwidW5pcXVlX25hbWUiOiJjaW10ZXN0dXNlciIsImVtYWlsIjoiY2ltdGVzdHVzZXJAa2ljLmNvbS5rdyIsInNlc3Npb25faWQiOiJzbVdZVzJYOVYwbVdUaXE0RG5aQldRIiwibmJmIjoxNzU0OTA3Nzc2LCJleHAiOjE3NTQ5MTEzNzYsImlhdCI6MTc1NDkwNzc3Nn0.QiiFi08Tgdsf1bxxRt3AT_VWTvWjNWY7aOwSFNZ30Ak';
           
           // Load preview by URL
           const docUrl = `${process.env.VUE_APP_API_BASE_URL}/download?id=${this.fileName}&docType=${this.doc_type}`;
@@ -191,14 +195,16 @@ export default {
  
           // Create a blob directly from response
           const blob = response.data;
-          const fileName = response.headers['content-filename'];
+          let fileName = response.headers['content-filename'];
           
+          // Lowercase file extension
+          const [filename_only, extension] = fileName.split('.');
+          fileName = filename_only + '.' + extension.toLowerCase();
+
           this.uploadFile = new File([blob], fileName);
           let filesName = fileName;
           
-          // Lowercase file extension
-          const [filename, extension] = filesName.split('.');
-          filesName = filename + '.' + extension.toLowerCase();
+          
           
           const fileType = this.getFileType(filesName);
           if(fileType != "pdf") {
