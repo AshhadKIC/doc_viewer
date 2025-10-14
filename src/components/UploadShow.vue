@@ -61,8 +61,8 @@ export default {
     this.isLoading = true;
 
     // Start a timer to see if auth was sent
-    setTimeout(() => {
-      // console.log('TIMEOUT');
+    setInterval(() => {
+      console.log('TIMEOUT');
       // this.pageLoad();
       
       // If auth was not sent show unauthorized without waiting
@@ -70,13 +70,18 @@ export default {
         console.log("auth was not sent");
         this.isLoading = false;
         this.showUnauthorized = true;
+      } else {
+        console.log("auth received");
+        this.isLoading = false;
+        this.showUnauthorized = false;
       }
     }, 3000);
     
 
     // Listen for the authentication token that will be sent from app trying to use the viewer
     window.addEventListener("message", (event) => {
-      // console.log("event-listener-message", event);
+      console.log("event-listener-message", event);
+      console.log("t", event.data.token);
 
       // Allow only parent origin
       // if (event.origin !== "http://localhost:8081") return;
@@ -90,6 +95,8 @@ export default {
 
     });
     // this.pageLoad();
+
+    window.parent.postMessage("ready-from-iframe", "*");
 
   },
   created() {
@@ -141,7 +148,8 @@ export default {
           const response = await axios.get(docUrl, {
             responseType: 'blob',
             headers: {
-              Authorization: `Bearer ${this.auth}`
+              Authorization: `Bearer ${this.auth}`,
+              // "X-Custom-Token": this.auth
             }
           });
  
@@ -185,11 +193,18 @@ export default {
           
           // Load preview by URL
           const docUrl = `${process.env.VUE_APP_API_BASE_URL}/download?id=${this.fileName}&docType=${this.doc_type}`;
+          // let reqHeaders = {};
+          // if(this.$route.query.external) {
+          //   reqHeaders["X-Custom-Token"] = this.auth;
+          // } else {
+          //   reqHeaders["Authorization"] = `Bearer ${this.auth}`;
+          // }
           
           const response = await axios.get(docUrl, {
             responseType: 'blob',
             headers: {
               Authorization: `Bearer ${this.auth}`
+              // "X-Custom-Token": this.auth
             }
           });
  
