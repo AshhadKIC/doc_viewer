@@ -213,7 +213,10 @@ export default {
           let fileName = response.headers['content-filename'];
           
           // Lowercase file extension
-          const [filename_only, extension] = fileName.split('.');
+          const lastDotIndex = fileName.lastIndexOf('.');
+          const filename_only = lastDotIndex === -1 ? fileName : fileName.slice(0, lastDotIndex);
+          const extension = lastDotIndex === -1 ? '' : fileName.slice(lastDotIndex + 1);
+
           fileName = filename_only + '.' + extension.toLowerCase();
 
           this.uploadFile = new File([blob], fileName);
