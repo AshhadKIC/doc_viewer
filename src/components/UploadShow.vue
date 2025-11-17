@@ -7,7 +7,7 @@
       <div v-if="isLoading" class="loading no-print pt-4">
         <h3>Loading....</h3>
       </div>
-      <div v-if="showUnauthorized" class="no-print pt-4">
+      <div v-if="showUnauthorized && isApprovedDocs" class="no-print pt-4">
         <h3>You are not authorized to access this</h3>
       </div>
       
@@ -61,26 +61,28 @@ export default {
     this.isLoading = true;
 
     // Start a timer to see if auth was sent
-    setInterval(() => {
-      console.log('TIMEOUT');
+    setTimeout(() => {
+      // console.log('TIMEOUT');
       // this.pageLoad();
       
       // If auth was not sent show unauthorized without waiting
-      if(!this.auth) {
-        console.log("auth was not sent");
-        this.isLoading = false;
-        this.showUnauthorized = true;
-      } else {
-        console.log("auth received");
-        this.isLoading = false;
-        this.showUnauthorized = false;
+      if(!this.isApprovedDocs) {
+        if(!this.auth) {
+          console.log("auth was not sent");
+          this.isLoading = false;
+          this.showUnauthorized = true;
+        } else {
+          console.log("auth received");
+          this.isLoading = false;
+          this.showUnauthorized = false;
+        }
       }
     }, 3000);
     
 
     // Listen for the authentication token that will be sent from app trying to use the viewer
     window.addEventListener("message", (event) => {
-      console.log("event-listener-message", event);
+      // console.log("event-listener-message", event);
       console.log("t", event.data.token);
 
       // Allow only parent origin
@@ -94,8 +96,13 @@ export default {
       this.pageLoad();
 
     });
-    // this.pageLoad();
 
+    if(this.isApprovedDocs)
+      this.pageLoad();
+
+    
+    // console.log(window.parent);
+    
     window.parent.postMessage("ready-from-iframe", "*");
 
   },
@@ -123,6 +130,12 @@ export default {
       this.filesName = fileId;
     }
   },
+  computed: {
+    isApprovedDocs() {
+      //approved docs loaded from docuware
+      return window.location.href.includes('approved-files');
+    }
+  },
   methods: {
     beforeFileUpload(file) {
         this.uploadFile = file;
@@ -143,23 +156,22 @@ export default {
       
       try {
         // Load preview by URL
-          const docUrl = `${process.env.VUE_APP_API_BASE_URL}/download?id=${this.fileName}&docType=${this.doc_type}`;
           
-          const response = await axios.get(docUrl, {
-            responseType: 'blob',
-            headers: {
-              Authorization: `Bearer ${this.auth}`,
-              // "X-Custom-Token": this.auth
-            }
-          });
- 
+          const [apiUrl, configs] = this.getConfigs(this.fileName, this.doc_type);
+          console.log(apiUrl)
+          const response = await axios.get(apiUrl, configs);
           
           // const response = await axios.get(`https://kic-connect.kic.com.kw/api/v1/download/${this.fileName}/${this.doc_type}`);
           if (response.data) {
             // const { fileBytes, fileName, contentType } = response.data;
             // Create a blob directly from response
             const blob = response.data;
-            const fileName = response.headers['content-filename'];
+            let fileName;
+            if(this.isApprovedDocs) {
+              fileName = response.headers['content-filename'];
+            } else {
+              fileName = `Doc_${this.fileName}.pdf`;
+            }
 
             
           // const byteArray = Uint8Array.from(atob(fileBytes), char => char.charCodeAt(0));
@@ -185,44 +197,34 @@ export default {
     },  
     async pageLoad() {
 
-        this.fileUrl = "http://localhost:3000/files/" + this.filesName;
+        // this.fileUrl = "http://localhost:3000/files/" + this.filesName;
         this.fileName = this.filesName;
         try {
 
-          // this.auth = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJjaW10ZXN0dXNlckBraWMuY29tLmt3IiwidW5pcXVlX25hbWUiOiJjaW10ZXN0dXNlciIsImVtYWlsIjoiY2ltdGVzdHVzZXJAa2ljLmNvbS5rdyIsInNlc3Npb25faWQiOiJzbVdZVzJYOVYwbVdUaXE0RG5aQldRIiwibmJmIjoxNzU0OTA3Nzc2LCJleHAiOjE3NTQ5MTEzNzYsImlhdCI6MTc1NDkwNzc3Nn0.QiiFi08Tgdsf1bxxRt3AT_VWTvWjNWY7aOwSFNZ30Ak';
-          
           // Load preview by URL
-          const docUrl = `${process.env.VUE_APP_API_BASE_URL}/download?id=${this.fileName}&docType=${this.doc_type}`;
-          // let reqHeaders = {};
-          // if(this.$route.query.external) {
-          //   reqHeaders["X-Custom-Token"] = this.auth;
-          // } else {
-          //   reqHeaders["Authorization"] = `Bearer ${this.auth}`;
-          // }
+          const [apiUrl, configs] = this.getConfigs(this.fileName, this.doc_type);
+          console.log(apiUrl)
           
-          const response = await axios.get(docUrl, {
-            responseType: 'blob',
-            headers: {
-              Authorization: `Bearer ${this.auth}`
-              // "X-Custom-Token": this.auth
-            }
-          });
+          const response = await axios.get(apiUrl, configs);
  
           // Create a blob directly from response
           const blob = response.data;
-          let fileName = response.headers['content-filename'];
-          
-          // Lowercase file extension
-          const lastDotIndex = fileName.lastIndexOf('.');
-          const filename_only = lastDotIndex === -1 ? fileName : fileName.slice(0, lastDotIndex);
-          const extension = lastDotIndex === -1 ? '' : fileName.slice(lastDotIndex + 1);
-
-          fileName = filename_only + '.' + extension.toLowerCase();
+          let fileName;
+          if(!this.isApprovedDocs) {
+            fileName = response.headers['content-filename'];
+            // Lowercase file extension
+            const lastDotIndex = fileName.lastIndexOf('.');
+            const filename_only = lastDotIndex === -1 ? fileName : fileName.slice(0, lastDotIndex);
+            const extension = lastDotIndex === -1 ? '' : fileName.slice(lastDotIndex + 1);
+            fileName = filename_only + '.' + extension.toLowerCase();
+            
+          } else {
+            // Docuware will only have .pdfs
+            fileName = `Doc_${this.fileName}.pdf`;
+          }
 
           this.uploadFile = new File([blob], fileName);
           let filesName = fileName;
-          
-          
           
           const fileType = this.getFileType(filesName);
           if(fileType != "pdf") {
@@ -237,6 +239,38 @@ export default {
           // Handle error
         }
     },
+
+    getConfigs(fileName, doc_type) {
+      let configs;
+      let apiUrl;
+      if(this.isApprovedDocs) {
+        // Load From Docuware 
+        apiUrl = `${process.env.VUE_APP_DOCUWARE_API_BASE_URL}/Documents/${atob(fileName)}/download`;
+        configs = {
+          responseType: 'blob',
+          headers: {
+            "Content-Type": "multipart/form-data",
+            'X-App-Name': 'KIC-DWMS',
+            'X-Api-Key': 'KIC_Unique_Secret_Key_456def',
+            'X-Requester': 'CORP_LIFECYCLE',
+          }
+        }
+      } else {
+        // Load from KIC Connect
+        apiUrl = `${process.env.VUE_APP_API_BASE_URL}/download?id=${fileName}&docType=${doc_type}`;
+        configs = {
+          responseType: 'blob',
+          headers: {
+            Authorization: `Bearer ${this.auth}`
+          }
+        }
+      }
+
+      return [
+        apiUrl,
+        configs
+      ];
+    }
   },
 };
 
