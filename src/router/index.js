@@ -19,6 +19,11 @@ const routes = [
     name: 'ShowApproved',
     component: UploadShow
   },
+  {
+    path: '/files-by-type/:name',
+    name: 'ShowFilesByType',
+    component: UploadShow
+  },
   // {
   //   path: '/about',
   //   name: 'About',

@@ -66,7 +66,7 @@ export default {
       // this.pageLoad();
       
       // If auth was not sent show unauthorized without waiting
-      if(!this.isApprovedDocs) {
+      if(!this.isDocuware) {
         if(!this.auth) {
           console.log("auth was not sent");
           this.isLoading = false;
@@ -97,7 +97,7 @@ export default {
 
     });
 
-    if(this.isApprovedDocs)
+    if(this.isDocuware)
       this.pageLoad();
 
     
@@ -134,7 +134,13 @@ export default {
     isApprovedDocs() {
       //approved docs loaded from docuware
       return window.location.href.includes('approved-files');
-    }
+    },
+    isFilesByType() {
+      return window.location.href.includes('files-by-type');
+    },
+    isDocuware() {
+      return window.location.href.includes('approved-files') || window.location.href.includes('files-by-type');
+    },
   },
   methods: {
     beforeFileUpload(file) {
@@ -196,6 +202,8 @@ export default {
       }
     },  
     async pageLoad() {
+        console.log('pageLoad');
+        
 
         // this.fileUrl = "http://localhost:3000/files/" + this.filesName;
         this.fileName = this.filesName;
@@ -205,12 +213,37 @@ export default {
           const [apiUrl, configs] = this.getConfigs(this.fileName, this.doc_type);
           console.log(apiUrl)
           
-          const response = await axios.get(apiUrl, configs);
+          let response;
+          if(this.isFilesByType) {
+            
+            const [civilId, cimId, docType] = this.fileName.split(':');
+            const payload = {
+              "clientType": "IND",
+              "civilId": civilId,
+              "cimId": cimId,
+              "documentType": docType,
+              "mergeDocs": true
+            }
+            // const payload = {
+            //   "clientType": "IND",
+            //   "civilId": "777777777770",
+            //   "cimId": "110110",
+            //   "documentType": "Civil ID",
+            //   "mergeDocs": true
+            // };
+
+            response = await axios.post(apiUrl, payload, configs);
+            
+          } else {
+            response = await axios.get(apiUrl, configs);
+
+          }
+          
  
           // Create a blob directly from response
           const blob = response.data;
           let fileName;
-          if(!this.isApprovedDocs) {
+          if(!this.isDocuware) {
             fileName = response.headers['content-filename'];
             // Lowercase file extension
             const lastDotIndex = fileName.lastIndexOf('.');
@@ -255,6 +288,18 @@ export default {
             'X-Requester': 'CORP_LIFECYCLE',
           }
         }
+      } else if  (this.isFilesByType) {
+        apiUrl = `${process.env.VUE_APP_DOCUWARE_API_BASE_URL}/Documents/download-by-doctype`;
+        configs = {
+          responseType: 'blob',
+          headers: {
+            'X-App-Name': 'KIC-DWMS',
+            'X-Api-Key': 'KIC_Unique_Secret_Key_456def',
+            'X-Requester': 'CORP_LIFECYCLE',
+          }
+        }
+
+      
       } else {
         // Load from KIC Connect
         apiUrl = `${process.env.VUE_APP_API_BASE_URL}/download?id=${fileName}&docType=${doc_type}`;
